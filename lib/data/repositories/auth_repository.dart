@@ -3,15 +3,20 @@ import 'package:http/http.dart' as http;
 import '../../core/constants.dart';
 
 class AuthRepository {
-  Future<String> login(String email, String password) async {
+  Future<Map<String, String>> login(String email, String password) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/api/login'),
+      Uri.parse('$baseUrl/login'),
       body: {'email': email, 'password': password},
     );
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data['token'];
+      final token = data['token'];
+      final role = data['user']['role'];
+      return {
+        'token': token,
+        'role': role,
+      };
     } else {
       throw Exception('Login failed: ${response.body}');
     }
@@ -19,7 +24,7 @@ class AuthRepository {
 
   Future<void> register(String name, String email, String password, String role) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/api/register'),
+      Uri.parse('$baseUrl/register'),
       body: {
         'name': name,
         'email': email,
@@ -36,7 +41,7 @@ class AuthRepository {
 
   Future<void> logout(String token) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/api/logout'),
+      Uri.parse('$baseUrl/logout'),
       headers: {'Authorization': 'Bearer $token'},
     );
 

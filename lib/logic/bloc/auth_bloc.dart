@@ -10,8 +10,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<LoginRequested>((event, emit) async {
       emit(AuthLoading());
       try {
-        final token = await repository.login(event.email, event.password);
-        emit(AuthSuccess(token));
+        final loginData = await repository.login(event.email, event.password);
+        final token = loginData['token'];
+        final role = loginData['role'];
+        emit(AuthSuccess(token!, role!));
       } catch (e) {
         emit(AuthFailure(e.toString()));
       }
@@ -21,7 +23,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthLoading());
       try {
         await repository.register(event.name, event.email, event.password, event.role);
-        emit(AuthSuccess()); 
+        emit(AuthLoggedOut());
       } catch (e) {
         emit(AuthFailure(e.toString()));
       }
@@ -36,6 +38,5 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         emit(AuthFailure(e.toString()));
       }
     });
-
   }
 }

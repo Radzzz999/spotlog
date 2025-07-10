@@ -5,7 +5,7 @@ import '../../logic/bloc/auth_bloc.dart';
 import '../../logic/bloc/auth_event.dart';
 import '../../logic/bloc/auth_state.dart';
 import 'dashboard_screen.dart';
-
+import 'worker_dashboard_screen.dart'; 
 
 class LoginScreen extends StatefulWidget {
   @override
@@ -23,10 +23,17 @@ class _LoginScreenState extends State<LoginScreen> {
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthSuccess) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => DashboardScreen(token: state.token!)),
-            );
+            if (state.role == 'admin') {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => DashboardScreen(token: state.token)),
+              );
+            } else if (state.role == 'worker') {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (_) => WorkerDashboardScreen(token: state.token)),
+              );
+            }
           }
           if (state is AuthFailure) {
             ScaffoldMessenger.of(context).showSnackBar(

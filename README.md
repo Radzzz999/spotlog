@@ -1,16 +1,3 @@
-# spotlog
+PRD -> https://www.notion.so/PRD-Product-Requirements-Doc-202d508d4807803e9e1fc6b464127d04?source=copy_link
 
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+backend -> https://github.com/Radzzz999/backend-spotlog.git

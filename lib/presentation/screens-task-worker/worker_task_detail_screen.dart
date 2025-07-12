@@ -71,7 +71,7 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
             Text('Description: ${widget.task.description ?? "No description"}'),
             const SizedBox(height: 20),
 
-            // Google Maps View (mini)
+        
             Container(
               height: 200,
               width: double.infinity,

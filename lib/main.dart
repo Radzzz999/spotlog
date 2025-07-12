@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:spotlog/data/repositories-task/task_repository.dart';
+import 'package:spotlog/logic/task/bloc/task_bloc.dart';
 import 'data/repositories/auth_repository.dart';
 import 'logic/bloc/auth_bloc.dart';
 import 'presentation/screens/login_screen.dart';
@@ -10,11 +12,15 @@ void main() {
 
 class MyApp extends StatelessWidget {
   final AuthRepository authRepository = AuthRepository();
+  final TaskRepository taskRepository = TaskRepository();
 
-  @override
+@override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => AuthBloc(authRepository),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (_) => AuthBloc(authRepository)),
+        BlocProvider(create: (_) => TaskBloc(taskRepository)),
+      ],
       child: MaterialApp(
         title: 'Spotlog App',
         home: LoginScreen(),

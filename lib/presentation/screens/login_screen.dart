@@ -5,7 +5,7 @@ import '../../logic/bloc/auth_bloc.dart';
 import '../../logic/bloc/auth_event.dart';
 import '../../logic/bloc/auth_state.dart';
 import 'dashboard_screen.dart';
-import 'worker_dashboard_screen.dart'; 
+import '../screens-task-worker/worker_dashboard_screen.dart'; 
 
 class LoginScreen extends StatefulWidget {
   @override

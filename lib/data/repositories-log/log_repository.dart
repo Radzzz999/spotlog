@@ -39,9 +39,10 @@ class LogRepository {
       headers: {'Authorization': 'Bearer $token'},
     );
     if (resp.statusCode == 200) {
-      final arr = jsonDecode(resp.body) as List<dynamic>;
-      return arr.map((j) => LogModel.fromJson(j)).toList();
-    }
+    final parsed = jsonDecode(resp.body);
+    final List<dynamic> data = parsed['data'];
+    return data.map((j) => LogModel.fromJson(j)).toList();
+  }
     throw Exception('Failed to load logs: ${resp.body}');
   }
 }

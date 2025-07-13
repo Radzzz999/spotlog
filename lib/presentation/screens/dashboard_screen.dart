@@ -3,6 +3,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:spotlog/logic/bloc/auth_bloc.dart';
 import 'package:spotlog/logic/bloc/auth_event.dart';
 import 'package:spotlog/logic/bloc/auth_state.dart';
+import 'package:spotlog/logic/task-home-admin/bloc/task_admin_bloc.dart';
+import 'package:spotlog/logic/task-home-admin/bloc/task_admin_event.dart';
+import 'package:spotlog/logic/task-home-admin/bloc/task_admin_state.dart';
 import 'package:spotlog/presentation/screens-task/assign_task_screen.dart';
 import 'package:spotlog/presentation/screens/login_screen.dart';
 import 'package:spotlog/presentation/screens-hasil-submit-task-/tasks_combined_screen.dart';
@@ -10,7 +13,7 @@ import 'package:spotlog/presentation/screens-hasil-submit-task-/tasks_combined_s
 class DashboardScreen extends StatefulWidget {
   final String token;
 
-  DashboardScreen({required this.token});
+  const DashboardScreen({Key? key, required this.token}) : super(key: key);
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -18,12 +21,15 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   int _selectedIndex = 0;
-
   late final List<Widget> _screens;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TaskBlocAdmin>().add(FetchTasksEvent(token: widget.token));
+    });
+
     _screens = [
       _buildHomeScreen(),
       AssignTaskScreen(token: widget.token),
@@ -32,23 +38,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildHomeScreen() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text('Welcome to Dashboard'),
-          const SizedBox(height: 20),
-          ElevatedButton.icon(
-            icon: Icon(Icons.task_alt),
-            label: Text('Assign Task to Worker'),
-            onPressed: () {
-              setState(() {
-                _selectedIndex = 1;
-              });
+    return BlocBuilder<TaskBlocAdmin, TaskState>(
+      builder: (context, state) {
+        if (state is TaskLoading) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (state is TaskLoaded) {
+          final tasks = state.tasks;
+
+          if (tasks.isEmpty) {
+            return const Center(child: Text('Tidak ada task yang tersedia.'));
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(12),
+            itemCount: tasks.length,
+            itemBuilder: (context, index) {
+              final task = tasks[index];
+              return Card(
+                elevation: 2,
+                margin: const EdgeInsets.only(bottom: 12),
+                child: ListTile(
+                  leading: const Icon(Icons.task_alt, color: Colors.blue),
+                  title: Text(task.title),
+                  subtitle: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (task.description != null)
+                        Text(task.description!),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Status: ${task.status}',
+                        style: TextStyle(
+                          color: task.status == 'completed'
+                              ? Colors.green
+                              : Colors.orange,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
             },
-          ),
-        ],
-      ),
+          );
+        } else if (state is TaskError) {
+          return Center(child: Text('Terjadi kesalahan: ${state.message}'));
+        } else {
+          return const Center(child: Text('Silakan tunggu...'));
+        }
+      },
     );
   }
 
@@ -72,10 +109,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text('Dashboard'),
+          title: const Text('Dashboard'),
           actions: [
             IconButton(
-              icon: Icon(Icons.logout),
+              icon: const Icon(Icons.logout),
               onPressed: () {
                 context.read<AuthBloc>().add(LogoutRequested(widget.token));
               },

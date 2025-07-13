@@ -4,7 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:spotlog/logic/task/bloc/task_bloc.dart';
 import 'package:spotlog/logic/task/bloc/task_event.dart';
 import 'package:spotlog/logic/task/bloc/task_state.dart';
-import 'native_map_screen.dart';
+import 'native_map_screen.dart'; 
 
 class AssignTaskScreen extends StatefulWidget {
   final String token;
@@ -26,20 +26,27 @@ class _AssignTaskScreenState extends State<AssignTaskScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Assign Task')),
+      appBar: AppBar(title: const Text('Assign Task')),
       body: BlocConsumer<TaskBloc, TaskState>(
         listener: (context, state) {
           if (state is TaskSuccess) {
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Task assigned successfully')),
+              const SnackBar(content: Text('Tugas berhasil dibuat!')),
             );
-            Navigator.pop(context);
+            titleController.clear();
+            descriptionController.clear();
+            assignedToController.clear();
+            setState(() {
+              _pickedLatLng = null;
+              _pickedAddress = null;
+            });
           } else if (state is TaskFailure) {
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(state.error)),
             );
           }
         },
+
         builder: (context, state) {
           return Padding(
             padding: EdgeInsets.all(16),

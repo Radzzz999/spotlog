@@ -9,6 +9,7 @@ class TaskModel {
   final int assignedTo;
   final WorkerTaskModel? assignedUser;
   final String? status;
+  
 
   TaskModel({
     required this.id,

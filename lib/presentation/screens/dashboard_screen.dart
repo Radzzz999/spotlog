@@ -7,6 +7,7 @@ import 'package:spotlog/logic/task-home-admin/bloc/task_admin_bloc.dart';
 import 'package:spotlog/logic/task-home-admin/bloc/task_admin_event.dart';
 import 'package:spotlog/logic/task-home-admin/bloc/task_admin_state.dart';
 import 'package:spotlog/presentation/screens-task/assign_task_screen.dart';
+import 'package:spotlog/presentation/screens-task/detail_task_admin.dart';
 import 'package:spotlog/presentation/screens/login_screen.dart';
 import 'package:spotlog/presentation/screens-hasil-submit-task-/tasks_combined_screen.dart';
 
@@ -58,24 +59,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 elevation: 2,
                 margin: const EdgeInsets.only(bottom: 12),
                 child: ListTile(
-                  leading: const Icon(Icons.task_alt, color: Colors.blue),
+                  leading: const Icon(Icons.task_rounded, color: Colors.blue),
                   title: Text(task.title),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      if (task.description != null)
-                        Text(task.description!),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Status: ${task.status}',
-                        style: TextStyle(
-                          color: task.status == 'completed'
-                              ? Colors.green
-                              : Colors.orange,
+                  subtitle: task.description != null
+                  ? Text(task.description!)
+                  : null,
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => AdminTaskDetailScreen(
+                          task: task,
+                          token: widget.token,
                         ),
                       ),
-                    ],
-                  ),
+                    );
+                  },
                 ),
               );
             },

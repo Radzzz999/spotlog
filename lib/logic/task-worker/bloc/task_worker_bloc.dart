@@ -11,7 +11,9 @@ class WorkerTaskBloc extends Bloc<WorkerTaskEvent, WorkerTaskState> {
     on<FetchWorkerTasksRequested>((event, emit) async {
       emit(WorkerTaskLoading());
       try {
-        final tasks = await repo.fetchWorkerTasks(event.token);
+        final tasks = event.isAdmin
+            ? await repo.fetchWorkerTasksAsAdmin(event.token)
+            : await repo.fetchWorkerTasks(event.token);
         emit(WorkerTaskLoaded(tasks));
       } catch (e) {
         emit(WorkerTaskFailure(e.toString()));

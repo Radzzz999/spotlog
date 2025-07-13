@@ -19,11 +19,20 @@ class TasksCombinedScreen extends StatefulWidget {
 
 class _TasksCombinedScreenState extends State<TasksCombinedScreen> {
   @override
-  void initState() {
-    super.initState();
-    context.read<WorkerTaskBloc>().add(FetchWorkerTasksRequested(widget.token));
-    context.read<LogBloc>().add(FetchLogsRequested(widget.token));
-  }
+void initState() {
+  super.initState();
+
+  
+  context.read<WorkerTaskBloc>().add(
+    FetchWorkerTasksRequested(widget.token, isAdmin: true),
+  );
+
+  
+  context.read<LogBloc>().add(
+    FetchLogsRequested(widget.token),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {

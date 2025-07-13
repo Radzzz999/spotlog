@@ -4,7 +4,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:spotlog/logic/task/bloc/task_bloc.dart';
 import 'package:spotlog/logic/task/bloc/task_event.dart';
 import 'package:spotlog/logic/task/bloc/task_state.dart';
-import 'native_map_screen.dart'; // import file baru
+import 'native_map_screen.dart';
 
 class AssignTaskScreen extends StatefulWidget {
   final String token;

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:spotlog/logic/bloc/auth_bloc.dart';
+import 'package:spotlog/logic/bloc/auth_event.dart';
+import 'package:spotlog/logic/bloc/auth_state.dart';
 import 'package:spotlog/logic/task-worker/bloc/task_worker_bloc.dart';
 import 'package:spotlog/logic/task-worker/bloc/task_worker_event.dart';
 import 'package:spotlog/logic/task-worker/bloc/task_worker_state.dart';
@@ -9,7 +12,7 @@ import 'package:spotlog/presentation/screens-hasil-submit-task-/tasks_combined_s
 import 'package:spotlog/presentation/screens-log/create_log_screen.dart';
 import 'package:spotlog/presentation/screens-profil/profile_screen.dart';
 import 'package:spotlog/presentation/screens-task-worker/worker_task_detail_screen.dart';
-
+import 'package:spotlog/presentation/screens/login_screen.dart';
 
 class WorkerDashboardScreen extends StatefulWidget {
   final String token;
@@ -36,36 +39,77 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
     });
   }
 
-  
   List<Widget> get _screens => [
-        _buildDashboard(), 
-        TasksCombinedScreen(token: widget.token), 
-        const ProfileScreen(), 
+        _buildDashboard(),
+        TasksCombinedScreen(token: widget.token),
+        const ProfileScreen(),
       ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Worker Dashboard')),
-      body: _screens[_selectedIndex], 
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex,
-        onTap: _onItemTapped,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.dashboard),
-            label: 'Dashboard',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment),
-            label: 'Tugas',
-          ),
-        ],
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, state) {
+        if (state is AuthLoggedOut) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => LoginScreen()),
+            (route) => false,
+          );
+        }
+      },
+      child: Scaffold(
+        appBar: AppBar(
+          title: const Text('Worker Dashboard'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Logout',
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (_) => AlertDialog(
+                    title: const Text('Konfirmasi Logout'),
+                    content: const Text('Apakah kamu yakin ingin keluar?'),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Batal'),
+                      ),
+                      TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          context
+                              .read<AuthBloc>()
+                              .add(LogoutRequested(widget.token));
+                        },
+                        child: const Text('Logout'),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+        body: _screens[_selectedIndex],
+        bottomNavigationBar: BottomNavigationBar(
+          currentIndex: _selectedIndex,
+          onTap: _onItemTapped,
+          items: const [
+            BottomNavigationBarItem(
+              icon: Icon(Icons.dashboard),
+              label: 'Dashboard',
+            ),
+            BottomNavigationBarItem(
+              icon: Icon(Icons.assignment),
+              label: 'Tugas',
+            ),
+          ],
+        ),
       ),
     );
   }
 
- 
   Widget _buildDashboard() {
     return BlocBuilder<WorkerTaskBloc, WorkerTaskState>(
       builder: (context, state) {
@@ -75,7 +119,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
           final tasks = state.tasks;
 
           if (tasks.isEmpty) {
-            return const Center(child: Text('No tasks available'));
+            return const Center(child: Text('Tidak ada tugas yang tersedia.'));
           }
 
           return ListView.builder(
@@ -86,12 +130,13 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
                 margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 child: ListTile(
                   title: Text(task.title),
-                  subtitle: Text(task.description ?? 'No description'),
+                  subtitle: Text(task.description ?? 'Tidak ada deskripsi'),
                   trailing: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
                         icon: const Icon(Icons.info_outline),
+                        tooltip: 'Detail',
                         onPressed: () {
                           Navigator.push(
                             context,
@@ -125,7 +170,7 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
         } else if (state is WorkerTaskFailure) {
           return Center(child: Text('Error: ${state.message}'));
         } else {
-          return const Center(child: Text('No tasks available'));
+          return const Center(child: Text('Memuat tugas...'));
         }
       },
     );

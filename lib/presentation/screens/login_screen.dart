@@ -19,7 +19,12 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Login')),
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        title: Text('Login'),
+        centerTitle: true,
+        elevation: 0,
+      ),
       body: BlocConsumer<AuthBloc, AuthState>(
         listener: (context, state) {
           if (state is AuthSuccess) {
@@ -42,43 +47,71 @@ class _LoginScreenState extends State<LoginScreen> {
           }
         },
         builder: (context, state) {
-          return Padding(
-            padding: EdgeInsets.all(16),
-            child: Column(
-              children: [
-                TextField(
-                  controller: emailController,
-                  decoration: InputDecoration(labelText: 'Email'),
-                ),
-                TextField(
-                  controller: passwordController,
-                  decoration: InputDecoration(labelText: 'Password'),
-                  obscureText: true,
-                ),
-                SizedBox(height: 20),
-                state is AuthLoading
-                    ? CircularProgressIndicator()
-                    : ElevatedButton(
-                        onPressed: () {
-                          context.read<AuthBloc>().add(
-                                LoginRequested(
-                                  emailController.text,
-                                  passwordController.text,
-                                ),
-                              );
-                        },
-                        child: Text('Login'),
-                      ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => RegisterScreen()),
-                    );
-                  },
-                  child: Text('Register'),
-                )
-              ],
+          return Center(
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Text(
+                    'Welcome Back 👋',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blueAccent,
+                    ),
+                  ),
+                  SizedBox(height: 32),
+                  TextField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.email),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  SizedBox(height: 16),
+                  TextField(
+                    controller: passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.lock),
+                    ),
+                    obscureText: true,
+                  ),
+                  SizedBox(height: 24),
+                  state is AuthLoading
+                      ? Center(child: CircularProgressIndicator())
+                      : ElevatedButton.icon(
+                          onPressed: () {
+                            context.read<AuthBloc>().add(
+                                  LoginRequested(
+                                    emailController.text.trim(),
+                                    passwordController.text.trim(),
+                                  ),
+                                );
+                          },
+                          icon: Icon(Icons.login),
+                          label: Text('Login'),
+                          style: ElevatedButton.styleFrom(
+                            padding: EdgeInsets.symmetric(vertical: 14),
+                            textStyle: TextStyle(fontSize: 18),
+                          ),
+                        ),
+                  TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => RegisterScreen()),
+                      );
+                    },
+                    child: Text('Don’t have an account? Register'),
+                  ),
+                ],
+              ),
             ),
           );
         },

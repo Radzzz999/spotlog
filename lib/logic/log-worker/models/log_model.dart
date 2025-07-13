@@ -6,6 +6,11 @@ class LogModel {
   final double? latitude;
   final double? longitude;
   final String status;
+  final bool? isValidated; 
+  final String? adminNote;
+  final String? adminComment;
+
+
  
 
   LogModel({
@@ -16,6 +21,11 @@ class LogModel {
     this.latitude,
     this.longitude,
     required this.status,
+    this.isValidated,
+    this.adminNote,
+    this.adminComment,
+
+    
   });
 
   factory LogModel.fromJson(Map<String, dynamic> json) {
@@ -27,6 +37,32 @@ class LogModel {
       latitude: double.tryParse(json['latitude'].toString()),
       longitude: double.tryParse(json['longitude'].toString()),
       status: json['status'],
+      adminComment: json['admin_comment'],
+
+
+      isValidated: json['is_validated'] != null
+          ? json['is_validated'] == true || json['is_validated'].toString() == 'true'
+          : null,
+      adminNote: json['admin_note'],
+
+      
     );
   }
+  LogModel copyWith({
+  bool? isValidated,
+  String? adminNote,
+}) {
+  return LogModel(
+    id: id,
+    taskId: taskId,
+    description: description,
+    photoUrl: photoUrl,
+    latitude: latitude,
+    longitude: longitude,
+    status: status,
+    adminComment: adminComment,
+    isValidated: isValidated ?? this.isValidated,
+    adminNote: adminNote ?? this.adminNote,
+  );
+}
 }

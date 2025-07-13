@@ -45,4 +45,18 @@ class LogRepository {
   }
     throw Exception('Failed to load logs: ${resp.body}');
   }
+  Future<void> updateLogComment(int logId, String token, String comment) async {
+  final res = await http.put(
+    Uri.parse('$baseUrl/logs/$logId/comment'),
+    headers: {
+      'Authorization': 'Bearer $token',
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({'comment': comment}),
+  );
+
+  if (res.statusCode != 200) {
+    throw Exception('Gagal mengirim komentar: ${res.body}');
+  }
+}
 }

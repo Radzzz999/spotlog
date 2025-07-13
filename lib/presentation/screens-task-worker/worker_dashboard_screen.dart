@@ -60,10 +60,6 @@ class _WorkerDashboardScreenState extends State<WorkerDashboardScreen> {
             icon: Icon(Icons.assignment),
             label: 'Tugas',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: 'Profil',
-          ),
         ],
       ),
     );

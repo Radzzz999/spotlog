@@ -1,14 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../logic/task-worker/models/task_worker_model.dart';
 import '../../logic/log-worker/models/log_model.dart';
+import '../../logic/log-worker/bloc/log_bloc.dart';
+import '../../logic/log-worker/bloc/log_event.dart';
+import '../../logic/log-worker/bloc/log_state.dart';
 
 class WorkerTaskDetailScreen extends StatefulWidget {
   final WorkerTaskModel task;
   final LogModel? log;
+  final String role;
+  final String token;
 
-  const WorkerTaskDetailScreen({super.key, required this.task, this.log});
+  const WorkerTaskDetailScreen({
+    super.key,
+    required this.task,
+    this.log,
+    required this.role,
+    required this.token,
+  });
 
   @override
   State<WorkerTaskDetailScreen> createState() => _WorkerTaskDetailScreenState();
@@ -16,21 +28,43 @@ class WorkerTaskDetailScreen extends StatefulWidget {
 
 class _WorkerTaskDetailScreenState extends State<WorkerTaskDetailScreen> {
   String _logAddress = 'Memuat alamat...';
+  bool? _logIsValid;
+  final TextEditingController _adminNoteController = TextEditingController();
+  LogModel? _updatedLog;
 
   @override
   void initState() {
     super.initState();
+    _loadLatestLogFromBloc();
     _getLogAddress();
   }
 
-  Future<void> _getLogAddress() async {
-    if (widget.log?.latitude != null && widget.log?.longitude != null) {
-      try {
-        List<Placemark> placemarks = await placemarkFromCoordinates(
-          widget.log!.latitude!,
-          widget.log!.longitude!,
+  void _loadLatestLogFromBloc() {
+    if (widget.log != null) {
+      final blocState = context.read<LogBloc>().state;
+      if (blocState is LogsLoaded) {
+        _updatedLog = blocState.logs.firstWhere(
+          (l) => l.id == widget.log!.id,
+          orElse: () => widget.log!,
         );
+      } else {
+        _updatedLog = widget.log;
+      }
+    }
 
+    if (widget.role != 'admin' && _updatedLog != null) {
+      _logIsValid = _updatedLog!.isValidated;
+      _adminNoteController.text = _updatedLog!.adminNote ?? '';
+    }
+  }
+
+  Future<void> _getLogAddress() async {
+    if (_updatedLog?.latitude != null && _updatedLog?.longitude != null) {
+      try {
+        final placemarks = await placemarkFromCoordinates(
+          _updatedLog!.latitude!,
+          _updatedLog!.longitude!,
+        );
         if (placemarks.isNotEmpty) {
           final place = placemarks.first;
           setState(() {
@@ -38,125 +72,214 @@ class _WorkerTaskDetailScreenState extends State<WorkerTaskDetailScreen> {
                 '${place.street}, ${place.subLocality}, ${place.locality}, ${place.administrativeArea}, ${place.postalCode}, ${place.country}';
           });
         } else {
-          setState(() {
-            _logAddress = 'Alamat tidak ditemukan';
-          });
+          _logAddress = 'Alamat tidak ditemukan';
         }
-      } catch (e) {
-        setState(() {
-          _logAddress = 'Gagal memuat alamat';
-        });
+      } catch (_) {
+        _logAddress = 'Gagal memuat alamat';
       }
     } else {
-      setState(() {
-        _logAddress = 'Tidak ada koordinat log';
-      });
+      _logAddress = 'Tidak ada koordinat log';
     }
   }
 
   @override
+  void dispose() {
+    _adminNoteController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final log = widget.log;
     final task = widget.task;
+    final log = _updatedLog;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Detail Tugas & Log')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('📌 Judul Tugas: ${task.title}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Text('📝 Deskripsi: ${task.description ?? "-"}'),
+      body: log == null
+          ? const Center(child: Text('🚫 Belum ada log untuk tugas ini.'))
+          : SingleChildScrollView(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('📌 Judul Tugas: ${task.title}',
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('📝 Deskripsi: ${task.description ?? "-"}'),
+                  const SizedBox(height: 16),
 
-            const SizedBox(height: 16),
-            if (task.latitude != null && task.longitude != null) ...[
-              const Text('📍 Lokasi Tugas di Peta:', style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              Container(
-                height: 200,
-                width: double.infinity,
-                decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-                child: GoogleMap(
-                  initialCameraPosition: CameraPosition(
-                    target: LatLng(task.latitude!, task.longitude!),
-                    zoom: 15,
-                  ),
-                  markers: {
-                    Marker(
-                      markerId: const MarkerId('task_location'),
-                      position: LatLng(task.latitude!, task.longitude!),
-                      infoWindow: const InfoWindow(title: 'Lokasi Tugas'),
-                    ),
-                  },
-                  zoomControlsEnabled: false,
-                  myLocationButtonEnabled: false,
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 24),
-            const Divider(),
-            const Text('📄 Log Anda:', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-
-            if (log != null) ...[
-              const SizedBox(height: 8),
-              Text('📝 Deskripsi Log: ${log.description}'),
-              Text('⏳ Status: ${log.status}'),
-
-              if (log.latitude != null && log.longitude != null) ...[
-                const SizedBox(height: 16),
-                const Text('🗺 Lokasi Log di Peta:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                Container(
-                  height: 200,
-                  width: double.infinity,
-                  decoration: BoxDecoration(border: Border.all(color: Colors.grey)),
-                  child: GoogleMap(
-                    initialCameraPosition: CameraPosition(
-                      target: LatLng(log.latitude!, log.longitude!),
-                      zoom: 15,
-                    ),
-                    markers: {
-                      Marker(
-                        markerId: const MarkerId('log_location'),
-                        position: LatLng(log.latitude!, log.longitude!),
-                        infoWindow: const InfoWindow(title: 'Lokasi Log'),
+                  if (task.latitude != null && task.longitude != null) ...[
+                    const Text('📍 Lokasi Tugas di Peta:',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 200,
+                      child: GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: LatLng(task.latitude!, task.longitude!),
+                          zoom: 15,
+                        ),
+                        markers: {
+                          Marker(
+                            markerId: const MarkerId('task_location'),
+                            position: LatLng(task.latitude!, task.longitude!),
+                            infoWindow: const InfoWindow(title: 'Lokasi Tugas'),
+                          ),
+                        },
+                        zoomControlsEnabled: false,
+                        myLocationButtonEnabled: false,
                       ),
-                    },
-                    zoomControlsEnabled: false,
-                    myLocationButtonEnabled: false,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text('📍 Alamat Log:', style: TextStyle(fontWeight: FontWeight.bold)),
-                Text(_logAddress),
-              ],
+                    ),
+                  ],
 
-              const SizedBox(height: 16),
-              if (log.photoUrl != null) ...[
-                const Text('📷 Foto Log:', style: TextStyle(fontWeight: FontWeight.bold)),
-                const SizedBox(height: 8),
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: Image.network(
-                    log.photoUrl!,
-                    height: 200,
-                    width: double.infinity,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) =>
-                        const Text('Gagal memuat gambar'),
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const Text('📄 Log Anda:',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
+                  Text('📝 Deskripsi Log: ${log.description}'),
+                  Text('⏳ Status: ${log.status}'),
+
+                  if (log.latitude != null && log.longitude != null) ...[
+                    const SizedBox(height: 12),
+                    const Text('🗺 Lokasi Log di Peta:',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    SizedBox(
+                      height: 200,
+                      child: GoogleMap(
+                        initialCameraPosition: CameraPosition(
+                          target: LatLng(log.latitude!, log.longitude!),
+                          zoom: 15,
+                        ),
+                        markers: {
+                          Marker(
+                            markerId: const MarkerId('log_location'),
+                            position: LatLng(log.latitude!, log.longitude!),
+                            infoWindow: const InfoWindow(title: 'Lokasi Log'),
+                          ),
+                        },
+                        zoomControlsEnabled: false,
+                        myLocationButtonEnabled: false,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('📍 Alamat Log:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(_logAddress),
+                  ],
+
+                  const SizedBox(height: 16),
+                  if (log.photoUrl != null) ...[
+                    const Text('📷 Foto Log:', style: TextStyle(fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.network(
+                        log.photoUrl!,
+                        height: 200,
+                        width: double.infinity,
+                        fit: BoxFit.cover,
+                        errorBuilder: (_, __, ___) => const Text('Gagal memuat gambar'),
+                      ),
+                    ),
+                  ],
+
+                  if (log.adminComment?.isNotEmpty == true) ...[
+                    const SizedBox(height: 16),
+                    const Text('💬 Komentar Admin:',
+                        style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text(log.adminComment!),
+                  ],
+
+                  const SizedBox(height: 24),
+                  Card(
+                    elevation: 2,
+                    margin: const EdgeInsets.symmetric(vertical: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('🧾 Evaluasi Admin',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 8),
+
+                          if (widget.role == 'admin') ...[
+                            Row(
+                              children: [
+                                ChoiceChip(
+                                  label: const Text('Valid'),
+                                  selected: _logIsValid == true,
+                                  onSelected: (_) => setState(() => _logIsValid = true),
+                                ),
+                                const SizedBox(width: 8),
+                                ChoiceChip(
+                                  label: const Text('Tidak Valid'),
+                                  selected: _logIsValid == false,
+                                  onSelected: (_) => setState(() => _logIsValid = false),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 12),
+                            TextField(
+                              controller: _adminNoteController,
+                              decoration: const InputDecoration(
+                                labelText: 'Catatan/koreksi untuk user',
+                                border: OutlineInputBorder(),
+                              ),
+                              maxLines: 3,
+                            ),
+                            const SizedBox(height: 8),
+                            ElevatedButton(
+                              onPressed: () {
+                                if (_logIsValid != null &&
+                                    _adminNoteController.text.isNotEmpty) {
+                                  final updatedLog = log.copyWith(
+                                    isValidated: _logIsValid,
+                                    adminNote: _adminNoteController.text,
+                                  );
+                                  setState(() => _updatedLog = updatedLog);
+
+                                  context.read<LogBloc>().add(SaveLogEvaluation(
+                                    logId: log.id!,
+                                    isValidated: _logIsValid!,
+                                    adminNote: _adminNoteController.text,
+                                  ));
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                          'Log ditandai ${_logIsValid! ? "valid" : "tidak valid"}'),
+                                    ),
+                                  );
+                                } else {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content:
+                                            Text('Mohon isi status dan catatan terlebih dahulu')),
+                                  );
+                                }
+                              },
+                              child: const Text('Simpan Evaluasi'),
+                           ),
+                        ] else ...[
+                          Text('Status: ${_updatedLog?.isValidated == true
+                              ? "✅ Valid"
+                              : _updatedLog?.isValidated == false
+                                  ? "❌ Tidak Valid"
+                                  : "Belum dievaluasi"}'),
+                          const SizedBox(height: 8),
+                          if (_updatedLog?.adminNote?.isNotEmpty == true)
+                            Text('Catatan Admin: ${_updatedLog!.adminNote}'),
+                        ],
+                      ],
+                    ),
                   ),
                 ),
               ],
-            ] else ...[
-              const SizedBox(height: 12),
-              const Text('🚫 Belum ada log yang dikirim untuk tugas ini.'),
-            ],
-          ],
+            
+          ),
         ),
-      ),
-    );
+      );
   }
 }

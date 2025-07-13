@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:spotlog/logic/bloc/auth_bloc.dart';
+import 'package:spotlog/logic/bloc/auth_state.dart';
 import 'package:spotlog/logic/log-worker/bloc/log_bloc.dart';
 import 'package:spotlog/logic/log-worker/bloc/log_event.dart';
 import 'package:spotlog/logic/log-worker/bloc/log_state.dart';
@@ -19,20 +21,17 @@ class TasksCombinedScreen extends StatefulWidget {
 
 class _TasksCombinedScreenState extends State<TasksCombinedScreen> {
   @override
-void initState() {
-  super.initState();
+  void initState() {
+    super.initState();
 
-  
-  context.read<WorkerTaskBloc>().add(
-    FetchWorkerTasksRequested(widget.token, isAdmin: true),
-  );
+    context.read<WorkerTaskBloc>().add(
+      FetchWorkerTasksRequested(widget.token, isAdmin: true),
+    );
 
-  
-  context.read<LogBloc>().add(
-    FetchLogsRequested(widget.token),
-  );
-}
-
+    context.read<LogBloc>().add(
+      FetchLogsRequested(widget.token),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,10 +55,9 @@ void initState() {
 
               if (taskState is WorkerTaskLoaded && logState is LogsLoaded) {
                 final logsMap = {
-                  for (var log in logState.logs) log.taskId: log
+                  for (var log in logState.logs) log.taskId: log,
                 };
 
-                
                 final tasksWithLog = taskState.tasks
                     .where((task) => logsMap.containsKey(task.id))
                     .toList();
@@ -78,13 +76,24 @@ void initState() {
                       task: task,
                       log: log,
                       onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) =>
-                                WorkerTaskDetailScreen(task: task, log: log),
-                          ),
-                        );
+                        final authState = context.read<AuthBloc>().state;
+                        if (authState is AuthSuccess) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => WorkerTaskDetailScreen(
+                                task: task,
+                                log: log,
+                                token: widget.token,
+                                role: authState.role,
+                              ),
+                            ),
+                          );
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Gagal mengambil data login')),
+                          );
+                        }
                       },
                     );
                   },

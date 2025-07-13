@@ -32,5 +32,19 @@ class LogBloc extends Bloc<LogEvent, LogState> {
         emit(LogFailure(err.toString()));
       }
     });
+
+    on<SaveLogEvaluation>((event, emit) {
+  if (state is LogsLoaded) {
+    final currentLogs = (state as LogsLoaded).logs;
+    final updatedLogs = currentLogs.map((log) {
+      return log.id == event.logId
+        ? log.copyWith(
+            isValidated: event.isValidated,
+            adminNote: event.adminNote,
+          )
+        : log;
+    }).toList();
+  }
+});
   }
 }

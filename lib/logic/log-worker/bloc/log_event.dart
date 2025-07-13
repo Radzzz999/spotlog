@@ -30,3 +30,18 @@ class FetchLogsRequested extends LogEvent {
   @override
   List<Object?> get props => [token];
 }
+
+class SaveLogEvaluation extends LogEvent {
+  final int logId;
+  final bool isValidated;
+  final String adminNote;
+
+  SaveLogEvaluation({
+    required this.logId,
+    required this.isValidated,
+    required this.adminNote,
+  });
+
+  @override
+  List<Object?> get props => [logId, isValidated, adminNote];
+}
